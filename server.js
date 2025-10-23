@@ -1,56 +1,85 @@
-const express = require("express")
-const cors = require("cors")
-require("dotenv").config()
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
 
-const app = express()
+const app = express();
+const PORT = process.env.PORT || 3001;
 
-// Enable CORS for your frontend domain
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    credentials: true,
-  }),
-)
+// CORS configuration
+const allowedOrigins = [
+  'https://v0-satyrnotesproject14112.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
+];
 
-app.use(express.json())
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Handle preflight requests
+app.options('*', cors());
+
+// Middleware
+app.use(express.json());
 
 // Health check endpoint
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" })
-})
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
-// Secure config endpoint - only returns public Firebase keys
-app.get("/api/config", (req, res) => {
-  // Verify request origin for extra security
-  const origin = req.get("origin")
-  const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",")
+// Config endpoint
+app.get('/api/config', (req, res) => {
+  try {
+    const config = {
+      firebase: {
+        apiKey: process.env.FIREBASE_API_KEY,
+        authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.FIREBASE_APP_ID,
+        measurementId: process.env.FIREBASE_MEASUREMENT_ID
+      },
+      personalAI: {
+        apiKey: process.env.PERSONAL_AI_API_KEY,
+        domain: process.env.PERSONAL_AI_DOMAIN,
+        baseUrl: process.env.PERSONAL_AI_BASE_URL
+      }
+    };
 
-  if (!allowedOrigins.includes(origin)) {
-    return res.status(403).json({ error: "Forbidden" })
+    // Validate that required config exists
+    if (!config.firebase.apiKey || !config.personalAI.apiKey) {
+      return res.status(500).json({ 
+        error: 'Missing required environment variables' 
+      });
+    }
+
+    res.json(config);
+  } catch (error) {
+    console.error('Error serving config:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
+});
 
-  // Only return public Firebase config (safe to expose)
-  const config = {
-    firebase: {
-      apiKey: process.env.FIREBASE_API_KEY,
-      authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.FIREBASE_APP_ID,
-      measurementId: process.env.FIREBASE_MEASUREMENT_ID,
-    },
-    personalAi: {
-      apiKey: process.env.PERSONAL_AI_API_KEY,
-      domain: process.env.PERSONAL_AI_DOMAIN,
-      baseUrl: process.env.PERSONAL_AI_BASE_URL,
-    },
-  }
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
 
-  res.json(config)
-})
-
-const PORT = process.env.PORT || 5000
+// Start server
 app.listen(PORT, () => {
-  console.log(`Config server running on port ${PORT}`)
-})
+  console.log(`Backend server running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`Config endpoint: http://localhost:${PORT}/api/config`);
+});
