@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3001
 // CORS configuration
 const allowedOrigins = [
   "https://v0-satyaimain1-aa.vercel.app",
-  "https://v0-satyrnotesproject14112.vercel.app",
+  "https://v0-sat-yraimain1-aa.vercel.app/sat-notes.html",
   "http://localhost:3000",
   "http://localhost:3001",
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()) : []),
