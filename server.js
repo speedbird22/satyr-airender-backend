@@ -11,7 +11,7 @@ const allowedOrigins = [
   "https://v0-satyrnotesproject14112.vercel.app",
   "http://localhost:3000",
   "http://localhost:3001",
-  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : []),
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()) : []),
 ]
 
 app.use(
