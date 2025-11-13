@@ -5,9 +5,8 @@ const cors = require("cors")
 const app = express()
 const PORT = process.env.PORT || 8080
 
-// 🔓 Allow all origins temporarily
+// 🔓 Allow all origins temporarily for debugging
 app.use(cors({ origin: true, credentials: true }))
-
 app.use(express.json())
 
 // 🩺 Health check endpoint
@@ -24,8 +23,10 @@ app.get("/api/config", (req, res) => {
     FIREBASE_STORAGE_BUCKET,
     FIREBASE_MESSAGING_SENDER_ID,
     FIREBASE_APP_ID,
+    FIREBASE_MEASUREMENT_ID,
     PERSONAL_AI_API_KEY,
-    PERSONAL_AI_USER_ID,
+    PERSONAL_AI_DOMAIN,
+    PERSONAL_AI_BASE_URL,
   } = process.env
 
   if (
@@ -35,8 +36,10 @@ app.get("/api/config", (req, res) => {
     !FIREBASE_STORAGE_BUCKET ||
     !FIREBASE_MESSAGING_SENDER_ID ||
     !FIREBASE_APP_ID ||
+    !FIREBASE_MEASUREMENT_ID ||
     !PERSONAL_AI_API_KEY ||
-    !PERSONAL_AI_USER_ID
+    !PERSONAL_AI_DOMAIN ||
+    !PERSONAL_AI_BASE_URL
   ) {
     return res.status(500).json({ error: "Missing config values" })
   }
@@ -49,10 +52,12 @@ app.get("/api/config", (req, res) => {
       storageBucket: FIREBASE_STORAGE_BUCKET,
       messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
       appId: FIREBASE_APP_ID,
+      measurementId: FIREBASE_MEASUREMENT_ID,
     },
     personalAIConfig: {
       apiKey: PERSONAL_AI_API_KEY,
-      userId: PERSONAL_AI_USER_ID,
+      domain: PERSONAL_AI_DOMAIN,
+      baseUrl: PERSONAL_AI_BASE_URL,
     },
   })
 })
